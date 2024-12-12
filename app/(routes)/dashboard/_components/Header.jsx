@@ -1,44 +1,46 @@
-"use client"
-import Logo from '@/app/_components/Logo'
+"use client";
+import React, { useEffect } from 'react';
 import { db } from '@/config/firebaseConfig';
-import { OrganizationSwitcher, UserButton, useAuth, useUser } from '@clerk/nextjs'
 import { doc, setDoc } from 'firebase/firestore';
-import React, { useEffect } from 'react'
+import { useUser } from '@clerk/nextjs';
+import Logo from '@/app/_components/Logo';
+import { OrganizationSwitcher, UserButton } from '@clerk/nextjs';
 
 function Header() {
-  const { orgId } = useAuth();
   const { user } = useUser();
 
-  useEffect(()=>{
-    user&&saveUserData();
-  },[user])
+  useEffect(() => {
+    if (user) {
+      saveUserData();
+    }
+  }, [user]);
 
-  /**
-   * Used to save user data
-   */
   const saveUserData = async () => {
-     const docId = user?.primaryEmailAddress?.emailAddress
+    const docId = user?.primaryEmailAddress?.emailAddress;
+    const role = 'user'; // Default role
+
     try {
-      await setDoc(doc(db, 'LoopUsers', docId), {
+      await setDoc(doc(db, 'users', docId), {
         name: user?.fullName,
         avatar: user?.imageUrl,
-        email: user?.primaryEmailAddress?.emailAddress
-      })
+        email: user?.primaryEmailAddress?.emailAddress,
+        role: role,  // Default to 'user'
+      });
+    } catch (e) {
+      console.error("Error saving user data:", e);
     }
-    catch (e) {
+  };
 
-    }
-  }
   return (
-    <div className='flex justify-between items-center p-3
-    shadow-sm'>
+    <div className='flex justify-between items-center p-3 shadow-sm'>
       <Logo />
       <OrganizationSwitcher
         afterLeaveOrganizationUrl={'/dashboard'}
-        afterCreateOrganizationUrl={'/dashboard'} />
+        afterCreateOrganizationUrl={'/dashboard'} 
+      />
       <UserButton />
     </div>
-  )
+  );
 }
 
-export default Header
+export default Header;
