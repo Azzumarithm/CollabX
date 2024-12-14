@@ -23,9 +23,9 @@ function Dashboard() {
       }
 
       const userCredentials = await signInWithCustomToken(auth, token)
-      console.log('User:', userCredentials.user)
+      // console.log('User:', userCredentials.user)
 
-      // After signing in with Firebase, fetch Clerk session and store it
+      // // After signing in with Firebase, fetch Clerk session and store it
       const response = await fetch('/api/fetch-session', {
         method: 'POST',  // Changed to POST to send userId in the body
         headers: {
@@ -39,7 +39,7 @@ function Dashboard() {
       }
 
       const data = await response.json()
-      console.log('Session data:', data)
+     
     } catch (error) {
       // Log the error and display a message
       console.error('Error during Firebase sign-in:', error.message)
