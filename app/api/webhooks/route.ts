@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/config/firebaseConfig";
+import { fetchAndAnalyzeData } from "../vertex-ai/route";
 export async function POST(req: Request) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
 
