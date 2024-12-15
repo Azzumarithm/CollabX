@@ -44,6 +44,6 @@ export async function fetchAndAnalyzeData() {
         console.log("Analysis from Vertex AI:", text);
 
     } catch (error) {
-        console.error("Error fetching or processing data:", error);
-    }
+        console.error("Error fetching or processing data:", error);
+    }
 }

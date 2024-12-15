@@ -5,6 +5,7 @@ import { getAuth, signInWithCustomToken } from 'firebase/auth'
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirestore } from 'firebase/firestore'
 import { getVertexAI, getGenerativeModel } from "firebase/vertexai-preview"; // Initialize the Vertex AI service and the generative model
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -19,7 +20,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
-
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);

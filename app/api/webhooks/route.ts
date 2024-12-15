@@ -1,9 +1,10 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
-import { WebhookEvent } from "@clerk/nextjs/server";
+import { WebhookEvent } from "@clerk/nextjs/server"
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/config/firebaseConfig";
 import { fetchAndAnalyzeData } from "../vertex-ai/route";
+
 export async function POST(req: Request) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
 
@@ -76,6 +77,9 @@ export async function POST(req: Request) {
         clientIp: evt["event_attributes"]["http_request"]["client_ip"],
         userAgent: evt["event_attributes"]["http_request"]["user_agent"],
       });
+    
+      await fetchAndAnalyzeData();
+
       console.log(`Session created for user: ${user_id}`);
     } else if (
       eventType === "session.ended" ||
