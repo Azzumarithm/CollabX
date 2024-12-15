@@ -1,8 +1,11 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
-
+import { doc, setDoc, deleteDoc } from "firebase/firestore";
+import { db } from "@/config/firebaseConfig";
 export async function POST(req: Request) {
+
+  
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
 
   if (!SIGNING_SECRET) {
@@ -29,7 +32,9 @@ export async function POST(req: Request) {
 
   // Get body
   const payload = await req.json();
+  console.log("Raw Payload:", JSON.stringify(payload, null, 2));
   const body = JSON.stringify(payload);
+
 
   let evt: WebhookEvent;
 
@@ -50,9 +55,59 @@ export async function POST(req: Request) {
   // Do something with payload
   // For this guide, log payload to console
   const { id } = evt.data;
+
   const eventType = evt.type;
-  if (evt.type === "user.created") {
-    console.log("userId:", evt.data.id);
+  const userLogRef = doc(db, "users_log", id);
+
+  try {
+    if (eventType === "session.created") {
+      // Store session data when a new session is created
+      const { user_id } = evt.data;
+
+      await setDoc(userLogRef, {
+        abandonAt: evt.data.abandon_at,
+        clientId: evt.data.client_id,
+        createdAt: evt.data.created_at,
+        expireAt: evt.data.expire_at,
+        id: evt.data.id,
+        lastActiveAt: evt.data.last_active_at,
+        object: evt.data.object,
+        status: evt.data.status,
+        updatedAt: evt.data.updated_at,
+        userId: evt.data.user_id,
+
+      });
+      console.log(`Session created for user: ${user_id}`);
+    } else if (eventType === "session.ended") {
+      // Update session status when a session ends
+      const { user_id } = evt.data;
+      await setDoc(userLogRef, {
+        abandonAt: evt.data.abandon_at,
+        clientId: evt.data.client_id,
+        createdAt: evt.data.created_at,
+        expireAt: evt.data.expire_at,
+        id: evt.data.id,
+        lastActiveAt: evt.data.last_active_at,
+        object: evt.data.object,
+        status: evt.data.status,
+        updatedAt: evt.data.updated_at,
+        userId: evt.data.user_id,
+        
+      }, { merge: true });
+      console.log(`Session ended for user: ${user_id}`);
+    } else if (
+      eventType === "session.removed" ||
+      eventType === "session.revoked"
+    ) {
+      // Delete session data when a session is removed or revoked
+      await deleteDoc(userLogRef);
+      console.log(`Session removed/revoked for user`);
+    }
+
+    return new Response("Webhook received and processed", { status: 200 });
+  } catch (error) {
+    console.error("Error updating Firestore:", error);
+    return new Response("Error processing webhook", { status: 500 });
   }
 
   return new Response("Webhook received", { status: 200 });
