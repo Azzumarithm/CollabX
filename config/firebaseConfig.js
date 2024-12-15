@@ -4,6 +4,8 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth, signInWithCustomToken } from 'firebase/auth'
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirestore } from 'firebase/firestore'
+import { getVertexAI, getGenerativeModel } from "firebase/vertexai-preview"; // Initialize the Vertex AI service and the generative model
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -19,7 +21,6 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app)
@@ -27,3 +28,9 @@ export const auth = getAuth(app)
 
 export const functions = getFunctions(app);
 
+// Initialize the Vertex AI service
+export const vertexAI = getVertexAI(app);
+
+// Initialize the generative model with a model that supports your use case
+// Gemini 1.5 models are versatile and can be used with all API capabilities
+export const model = getGenerativeModel(vertexAI, { model: "gemini-1.5-flash" })
