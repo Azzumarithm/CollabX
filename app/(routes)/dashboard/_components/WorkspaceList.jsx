@@ -24,7 +24,7 @@ function WorkspaceList() {
         const querySnapshot=await getDocs(q);
         setWorkspaceList([]);
         querySnapshot.forEach((doc)=>{
-            console.log(doc.data())
+            // console.log(doc.data())
             setWorkspaceList(prev=>[...prev,doc.data()])
         })
     }

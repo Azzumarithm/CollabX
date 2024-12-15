@@ -1,7 +1,7 @@
 "use client"
 import Logo from '@/app/_components/Logo'
 import { db } from '@/config/firebaseConfig';
-import { OrganizationSwitcher, UserButton, useAuth, useUser } from '@clerk/nextjs'
+import { OrganizationSwitcher, UserButton, UserProfile, useAuth, useUser } from '@clerk/nextjs'
 import { doc, setDoc } from 'firebase/firestore';
 import React, { useEffect } from 'react'
 
