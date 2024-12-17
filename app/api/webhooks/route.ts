@@ -2,7 +2,9 @@ import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
-import { db } from "@/config/firebaseConfig";
+import { db, model } from "@/config/firebaseConfig";
+import { collection, getDocs } from "firebase/firestore";
+
 export async function POST(req: Request) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
 
@@ -30,7 +32,7 @@ export async function POST(req: Request) {
 
   // Get body
   const payload = await req.json();
-  console.log("Raw Payload:", JSON.stringify(payload, null, 2));
+  // console.log("Raw Payload:", JSON.stringify(payload, null, 2));
   const body = JSON.stringify(payload);
 
   let evt: WebhookEvent;
@@ -75,7 +77,10 @@ export async function POST(req: Request) {
         clientIp: evt["event_attributes"]["http_request"]["client_ip"],
         userAgent: evt["event_attributes"]["http_request"]["user_agent"],
       });
+
       console.log(`Session created for user: ${user_id}`);
+      await fetchAndAnalyzeData();
+      return new Response("Webhook received and processed", { status: 200 });
     } else if (
       eventType === "session.ended" ||
       eventType === "session.removed"
@@ -100,9 +105,14 @@ export async function POST(req: Request) {
         },
         { merge: true }
       );
+
       console.log(`Session ended for user: ${user_id}`);
+      await fetchAndAnalyzeData();
+
+      return new Response("Webhook received and processed", { status: 200 });
     } else if (eventType === "session.revoked") {
       // Delete session data when a session is removed or revoked
+      await fetchAndAnalyzeData();
       await deleteDoc(userLogRef);
       console.log(`Session revoked for user`);
     }
@@ -114,4 +124,97 @@ export async function POST(req: Request) {
   }
 
   return new Response("Webhook received", { status: 200 });
+}
+
+// Delay function to introduce delays between API calls
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Retry logic to handle rate limit errors
+const generateContentWithRetry = async (prompt, retries = 3) => {
+  let attempt = 0;
+  while (attempt < retries) {
+    try {
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      return response.text();
+    } catch (error) {
+      if (error.customErrorData?.status === 429 && attempt < retries - 1) {
+        console.warn(`Rate limit exceeded. Retrying in ${
+          (attempt + 1) * 1000
+        }ms...);
+        await delay((attempt + 1) * 1000); // Exponential backoff
+        attempt++;`);
+      } else {
+        throw error; // Re-throw if max retries are reached
+      }
+    }
+  }
+};
+
+// Main function to fetch and analyze data
+export async function fetchAndAnalyzeData() {
+  try {
+    // Fetch documents from the users_log collection
+    const usersLogCollection = collection(db, "users_log");
+    const querySnapshot = await getDocs(usersLogCollection);
+
+    // Extract and format the data
+    const usersLogData = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+
+      usersLogData.push({
+        abandonAt: data.abandonAt,
+        clientId: data.clientId,
+        createdAt: data.createdAt,
+        expireAt: data.expireAt,
+        id: data.id,
+        lastActiveAt: data.lastActiveAt,
+        object: data.object,
+        status: data.status,
+        updatedAt: data.updatedAt,
+        userId: data.userId,
+        clientIp: data.clientIp,
+        userAgent: data.userAgent,
+      });
+    });
+
+    if (usersLogData.length > 0) {
+      // Convert the data to JSON string
+      const jsonString = JSON.stringify(usersLogData, null, 2);
+
+      // Combined prompt for anomaly detection and table creation
+      // const prompts = {
+      //   filter1:
+      //   `I want you to do these tasks:
+      //   1) Create the relevant fields such as userId, createdAt, lastActiveAt, AbandonAt, status, clientIp, userAgent:\n\n${jsonString}
+      //   2) Create a table for the dataset in markdown format.`,
+      //   filter2:
+      //   `Generate results for the calculations based on the dataset and then give me the results in JSON format for a specific user ID:
+      //   1) Step 1: Calculate the mean and standard deviation of the lastActiveAt column for every User ID based on the data in the dataset.
+      //   2) Step 2: Calculate the Z-score for each data point using the formula: Z-score = (data point - mean) / standard deviation. Give me the results of the Z-score for all the data points in the dataset.
+      //   3) Step 3: Set a threshold: Typically, data points with a Z-score greater than 3 or less than -3 are considered outliers.
+      //   4) If there are no anomalies detected, type 'Normal' otherwise 'User ID Flagged`
+      // }
+      const combinedPrompts = `I want you to do these tasks:
+      1) Create the relevant fields such as userId, createdAt, lastActiveAt, AbandonAt, status, clientIp, userAgent:\n\n${jsonString}
+      2) Create a table for the dataset in markdown format.
+
+      Generate results for the calculations based on the dataset and then give me the results in JSON format for all the users based on their User ID:
+
+      3) Step 1: Calculate the mean and standard deviation of the lastActiveAt column for every User ID based on the data in the dataset.
+      4) Step 2: Calculate the Z-score for each data point using the formula: Z-score = (data point - mean) / standard deviation. Give me the results of the Z-score for all the data points in the dataset.
+      5) Step 3: Set a threshold: Typically, data points with a Z-score greater than 3 or less than -3 are considered outliers.
+      6) Step 4: If the Z-score is greater for each lastActiveAt data point is greater than 3 or less than -3, type 'User ID Flagged' otherwise 'Normal'`
+
+      // Generate content with retry logic
+
+      const combinedResponse = await generateContentWithRetry(combinedPrompts);
+      console.log(combinedResponse);
+    }
+
+    // TODO: Save the analysis results to Firestore or take further action
+  } catch (error) {
+    console.error("Error fetching or processing data:", error);
+  }
 }
