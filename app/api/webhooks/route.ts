@@ -205,12 +205,32 @@ export async function fetchAndAnalyzeData() {
       3) Step 1: Calculate the mean and standard deviation of the lastActiveAt column for every User ID based on the data in the dataset.
       4) Step 2: Calculate the Z-score for each data point using the formula: Z-score = (data point - mean) / standard deviation. Give me the results of the Z-score for all the data points in the dataset.
       5) Step 3: Set a threshold: Typically, data points with a Z-score greater than 3 or less than -3 are considered outliers.
-      6) Step 4: If the Z-score is greater for each lastActiveAt data point is greater than 3 or less than -3, type 'User ID Flagged' otherwise 'Normal'`
+      6) Step 4: If the Z-score is greater for each lastActiveAt data point is greater than 3 or less than -3, type 'User ID Flagged' otherwise 'Normal'`;
 
       // Generate content with retry logic
 
       const combinedResponse = await generateContentWithRetry(combinedPrompts);
       console.log(combinedResponse);
+
+      // Parse the combinedResponse if it's a stringified JSON
+      const parsedResponse = JSON.parse(combinedResponse);
+
+      // Assuming userID is part of the parsed response
+      const userID = parsedResponse.userID;
+
+      // Reference to the redflag_response collection with document for specific user ID
+      const redFlagRef = doc(db, "redflag_response", userID);
+
+      try {
+        // Save the parsed response to Firestore
+        await setDoc(redFlagRef, {
+          jsonResponse: parsedResponse,
+        });
+    
+        console.log(`Red flag response saved for user: ${userID}`);
+      } catch (error) {
+        console.error("Error saving red flag response to Firestore:", error);
+      }
     }
 
     // TODO: Save the analysis results to Firestore or take further action

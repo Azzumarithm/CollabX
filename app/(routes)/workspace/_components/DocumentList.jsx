@@ -24,7 +24,7 @@ function DocumentList({documentList,params}) {
             ${doc?.id==params?.documentid&&'bg-white'}
             `}>
                 <div className='flex gap-2 items-center'>
-                  {!doc.emoji&&  <Image src={'/loopdocument.svg'} width={20} height={20}/>}
+                  {!doc.emoji&&  <Image src={'/redflag-logo.png'} width={20} height={20}/>}
                     <h2 className='flex gap-2'> {doc?.emoji} {doc.documentName}</h2>
                 </div>
                 <DocumentOptions doc={doc} deleteDocument={(docId)=>DeleteDocument(docId)} />

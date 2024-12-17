@@ -4,7 +4,7 @@ import Logo from './Logo'
 function Header() {
   return (
 <div className='px-5'>
-    <nav className="z-10 w-full ">
+    <nav className="z-10 w-full">
         <div>
             <div className="flex flex-wrap items-center justify-between py-2 gap-6 md:py-4 md:gap-0 relative">
                 <input aria-hidden="true" type="checkbox" name="toggle_nav" id="toggle_nav" className="hidden peer"/>
@@ -54,7 +54,7 @@ function Header() {
                     <div className="mt-12 lg:mt-0">
                         <a
                             href="/dashboard"
-                            className="relative flex h-9 w-full items-center justify-center px-4 before:absolute before:inset-0 before:rounded-full before:bg-primary before:transition 
+                            className="relative flex h-9 w-full items-center justify-center px-4 before:absolute before:inset-0 before:rounded-full before:bg-red-600 before:transition 
                             before:duration-300 hover:before:scale-105 
                             active:duration-75 active:before:scale-95 sm:w-max"
                             >
