@@ -152,7 +152,7 @@ const generateContentWithRetry = async (prompt, retries = 3) => {
 };
 
 // Main function to fetch and analyze data
-export async function fetchAndAnalyzeData() {
+async function fetchAndAnalyzeData() {
   try {
     // Fetch documents from the users_log collection
     const usersLogCollection = collection(db, "users_log");
