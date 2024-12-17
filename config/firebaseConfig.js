@@ -4,7 +4,9 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth, signInWithCustomToken } from 'firebase/auth'
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirestore } from 'firebase/firestore'
-import { getVertexAI, getGenerativeModel } from "firebase/vertexai-preview"; // Initialize the Vertex AI service and the generative model
+import { getVertexAI, getGenerativeModel } from "firebase/vertexai-preview"; 
+import {FunctionDeclarationSchemaType} from "@google/generative-ai"
+// Initialize the Vertex AI service and the generative model
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -32,6 +34,65 @@ export const functions = getFunctions(app);
 export const vertexAI = getVertexAI(app);
 
 // Initialize the generative model with a model that supports your use case
-// Gemini 1.5 models are versatile and can be used with all API capabilities
-export const model = getGenerativeModel(vertexAI, { model: "gemini-1.5-flash" })
+// Gemini 2.0 
+const schema = {
+  type: FunctionDeclarationSchemaType.OBJECT,
+  properties: {
+    userID: {
+      type: FunctionDeclarationSchemaType.STRING,
+      nullable: false,
+    },
+    mean_lastActiveAt: {
+      type: FunctionDeclarationSchemaType.NUMBER,
+      nullable: false,
+    },
+    std_lastActiveAt: {
+      type: FunctionDeclarationSchemaType.NUMBER,
+      nullable: false,
+    },
+    z_scores: {
+      type: FunctionDeclarationSchemaType.ARRAY,
+      items: {
+        type: FunctionDeclarationSchemaType.OBJECT,
+        properties: {
+          lastActiveAt: {
+            type: FunctionDeclarationSchemaType.NUMBER,
+            nullable: false,
+          },
+          z_score: {
+            type: FunctionDeclarationSchemaType.NUMBER,
+            nullable: false,
+          },
+        },
+        required: ["lastActiveAt", "z_score"],
+      },
+      nullable: false,
+    },
+    anomaly_status: {
+      type: FunctionDeclarationSchemaType.STRING,
+      nullable: false,
+    },
+  },
+  required: [
+    "userID",
+    "mean_lastActiveAt",
+    "std_lastActiveAt",
+    "z_scores",
+    "anomaly_status",
+  ],
+};
+
+export const model = getGenerativeModel(vertexAI, {
+  model: "gemini-2.0-flash-exp", tools: [
+    {
+      codeExecution: {},
+    },
+  ],
+  generationConfig: {
+    responseMimeType: "application/json",
+    responseSchema: schema,
+  },
+})
+
+
 
